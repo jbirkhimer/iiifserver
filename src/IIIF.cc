@@ -79,7 +79,7 @@ void IIIF::run( Session* session, const string& src ){
 
     suffix = argument.substr( lastSlashPos+1, string::npos );
 
-    // If we have an info command, file name must be everything 
+    // If we have an info command, file name must be everything
     if( suffix.substr(0,4) == "info" ){
       filename = argument.substr(0,lastSlashPos);
     }
@@ -227,7 +227,7 @@ void IIIF::run( Session* session, const string& src ){
     int numOfTokens = 0;
 
 
-    // Region Parameter: { "full"; "x,y,w,h"; "pct:x,y,w,h" }
+    // Region Parameter: { "full"; "x,y,w,h"; "pct:x,y,w,h" ; "square" }
     if( izer.hasMoreTokens() ){
 
       // Our region parameters
@@ -245,6 +245,45 @@ void IIIF::run( Session* session, const string& src ){
         region[3] = 1.0;
       }
 
+      // Square export request
+      else if(regionString == "square") {
+        // Added in 2.1
+        // Return a square image that preserves the short edge of the content.
+        // The square is centered at a point of the server's choosing.
+        // We are centering the image (horizontally or vertically)
+
+        // making square with the lower size of image
+        unsigned int diff = abs(width - height);
+
+        // Get square size
+        float square = (float) min(width, height);
+
+        // Prepare full region
+        region[0] = 0.0;
+        region[1] = 0.0;
+        region[2] = 1.0;
+        region[3] = 1.0;
+
+        // If image is wider, we change index 0 and 2
+        // otherwise 1 and 3
+        int ind = (width > height) ? 0 : 1;
+
+        // Get size for change
+        float size = (width > height) ? (float)width : (float)height;
+
+        // First number is x or y position (index 0 or 1)
+        // Set x/y position to 1/2 of difference between width and height
+        region[ind] = ( (float)(diff/2) / size );
+        // Second number is width or height (index 2 or 3)
+        // Set width/height to preserve scale of image
+        region[2 + ind] = ( square / size );
+
+        session->view->setViewLeft( region[0] );
+        session->view->setViewTop( region[1] );
+        session->view->setViewWidth( region[2] );
+        session->view->setViewHeight( region[3] );
+      }
+
       // Region export request
       else{
 
@@ -252,36 +291,36 @@ void IIIF::run( Session* session, const string& src ){
         bool isPCT = false;
         if( regionString.substr(0,4) == "pct:" ){
           isPCT = true;
-	  // Strip this from our string
-	  regionString.erase( 0, 4 );
+          // Strip this from our string
+          regionString.erase( 0, 4 );
         }
 
         // Extract x,y,w,h tokenizing on ","
         Tokenizer regionIzer(regionString, ",");
         int n = 0;
 
-	// Extract our region values
-	while( regionIzer.hasMoreTokens() && n < 4 ){
-	  region[n++] = atof( regionIzer.nextToken().c_str() );
-	}
+        // Extract our region values
+        while( regionIzer.hasMoreTokens() && n < 4 ){
+          region[n++] = atof( regionIzer.nextToken().c_str() );
+        }
 
-	// Define our denominators as our session view expects a ratio, not pixel values
-	float wd = (float)width;
-	float hd = (float)height;
+        // Define our denominators as our session view expects a ratio, not pixel values
+        float wd = (float)width;
+        float hd = (float)height;
 
-	if( isPCT ){
-	  wd = 100.0;
-	  hd = 100.0;
-	}
+        if( isPCT ){
+          wd = 100.0;
+          hd = 100.0;
+        }
 
-	session->view->setViewLeft( region[0] / wd );
-	session->view->setViewTop( region[1] / hd );
-	session->view->setViewWidth( region[2] / wd );
-	session->view->setViewHeight( region[3] / hd );
+        session->view->setViewLeft( region[0] / wd );
+        session->view->setViewTop( region[1] / hd );
+        session->view->setViewWidth( region[2] / wd );
+        session->view->setViewHeight( region[3] / hd );
 
         // Incorrect region request
         if( regionIzer.hasMoreTokens() || n < 4 ){
-	  throw invalid_argument( "IIIF: incorrect region format: " + regionString );
+          throw invalid_argument( "IIIF: incorrect region format: " + regionString );
         }
 
       } // end of else - end of parsing x,y,w,h
@@ -290,7 +329,7 @@ void IIIF::run( Session* session, const string& src ){
 
       if( session->loglevel > 4 ){
         *(session->logfile) << "IIIF :: Requested Region: x:" << region[0] << ", y:" << region[1]
-			    << ", w:" << region[2] << ", h:" << region[3] << endl;
+                      << ", w:" << region[2] << ", h:" << region[3] << endl;
       }
 
     }
@@ -398,7 +437,7 @@ void IIIF::run( Session* session, const string& src ){
       istringstream i( rotationString );
       if( !(i >> rotation) ) throw invalid_argument( "IIIF: invalid rotation" );
 
- 
+
       // Check if converted value is supported
       if(!( rotation == 0 || rotation == 90 || rotation == 180 || rotation == 270 || rotation == 360 )){
 	throw invalid_argument( "IIIF: currently implemented rotation angles are 0, 90, 180 and 270 degrees" );
