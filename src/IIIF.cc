@@ -253,7 +253,7 @@ void IIIF::run( Session* session, const string& src ){
         // We are centering the image (horizontally or vertically)
 
         // making square with the lower size of image
-        unsigned int diff = abs(width - height);
+        unsigned int diff = (unsigned int)((long)abs((long)width - (long)height));
 
         // Get square size
         float square = (float) min(width, height);
