@@ -271,6 +271,12 @@ void IIIF::run( Session* session, const string& src ){
         // Get size for change
         float size = (width > height) ? (float)width : (float)height;
 
+        if( session->loglevel > 4 ){
+          *(session->logfile) << "IIIF :: Requested square: width:" << width << ", height:" << height
+                        << ", diff:" << diff << ", diff/2/size:" << ( (float)(diff/2) / size )
+                        << ", square:" << square << ", size:" << size << endl;
+        }
+
         // First number is x or y position (index 0 or 1)
         // Set x/y position to 1/2 of difference between width and height
         region[ind] = ( (float)(diff/2) / size );
@@ -282,6 +288,7 @@ void IIIF::run( Session* session, const string& src ){
         session->view->setViewTop( region[1] );
         session->view->setViewWidth( region[2] );
         session->view->setViewHeight( region[3] );
+
       }
 
       // Region export request
